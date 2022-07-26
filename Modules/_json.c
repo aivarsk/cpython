@@ -225,27 +225,37 @@ escape_unicode(PyObject *pystr)
     input = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
 
-    /* Compute the output size */
-    for (i = 0, output_size = 2; i < input_chars; i++) {
-        Py_UCS4 c = PyUnicode_READ(kind, input, i);
-        Py_ssize_t d;
-        switch (c) {
-        case '\\': case '"': case '\b': case '\f':
-        case '\n': case '\r': case '\t':
-            d = 2;
-            break;
-        default:
-            if (c <= 0x1f)
-                d = 6;
-            else
-                d = 1;
-        }
-        if (output_size > PY_SSIZE_T_MAX - d) {
-            PyErr_SetString(PyExc_OverflowError, "string is too long to escape");
-            return NULL;
-        }
-        output_size += d;
+#define COMPUTE_OUTPUT_SIZE do { \
+        for (i = 0, output_size = 2; i < input_chars; i++) { \
+            Py_UCS4 c = PyUnicode_READ(kind, input, i); \
+            Py_ssize_t d; \
+            switch (c) { \
+            case '\\': case '"': case '\b': case '\f': \
+            case '\n': case '\r': case '\t': \
+                d = 2; \
+                break; \
+            default: \
+                if (c <= 0x1f) \
+                    d = 6; \
+                else \
+                    d = 1; \
+            } \
+            if (output_size > PY_SSIZE_T_MAX - d) { \
+                PyErr_SetString(PyExc_OverflowError, "string is too long to escape"); \
+                return NULL; \
+            } \
+            output_size += d; \
+        } \
+    } while (0)
+    if (kind == PyUnicode_1BYTE_KIND) {
+        COMPUTE_OUTPUT_SIZE;
+    } else if (kind == PyUnicode_2BYTE_KIND) {
+        COMPUTE_OUTPUT_SIZE;
+    } else {
+        assert(kind == PyUnicode_4BYTE_KIND);
+        COMPUTE_OUTPUT_SIZE;
     }
+#undef COMPUTE_OUTPUT_SIZE
 
     rval = PyUnicode_New(output_size, maxchar);
     if (rval == NULL)
