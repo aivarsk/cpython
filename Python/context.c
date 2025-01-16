@@ -980,7 +980,7 @@ contextvar_tp_repr(PyObject *op)
         return NULL;
     }
 
-    if (PyUnicodeWriter_WriteUTF8(writer, "<ContextVar name=", 17) < 0) {
+    if (_PyUnicodeWriter_WriteASCIIString(writer, "<ContextVar name=", 17) < 0) {
         goto error;
     }
     if (PyUnicodeWriter_WriteRepr(writer, self->var_name) < 0) {
@@ -988,7 +988,7 @@ contextvar_tp_repr(PyObject *op)
     }
 
     if (self->var_default != NULL) {
-        if (PyUnicodeWriter_WriteUTF8(writer, " default=", 9) < 0) {
+        if (_PyUnicodeWriter_WriteASCIIString(writer, " default=", 9) < 0) {
             goto error;
         }
         if (PyUnicodeWriter_WriteRepr(writer, self->var_default) < 0) {
@@ -1183,15 +1183,15 @@ token_tp_repr(PyObject *op)
     if (writer == NULL) {
         return NULL;
     }
-    if (PyUnicodeWriter_WriteUTF8(writer, "<Token", 6) < 0) {
+    if (_PyUnicodeWriter_WriteASCIIString(writer, "<Token", 6) < 0) {
         goto error;
     }
     if (self->tok_used) {
-        if (PyUnicodeWriter_WriteUTF8(writer, " used", 5) < 0) {
+        if (_PyUnicodeWriter_WriteASCIIString(writer, " used", 5) < 0) {
             goto error;
         }
     }
-    if (PyUnicodeWriter_WriteUTF8(writer, " var=", 5) < 0) {
+    if (_PyUnicodeWriter_WriteASCIIString(writer, " var=", 5) < 0) {
         goto error;
     }
     if (PyUnicodeWriter_WriteRepr(writer, (PyObject *)self->tok_var) < 0) {

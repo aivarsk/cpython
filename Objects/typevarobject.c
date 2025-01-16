@@ -181,7 +181,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(value); i++) {
                 PyObject *item = PyTuple_GET_ITEM(value, i);
                 if (i > 0) {
-                    if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+                    if (_PyUnicodeWriter_WriteASCIIString(writer, ", ", 2) < 0) {
                         PyUnicodeWriter_Discard(writer);
                         return NULL;
                     }
@@ -262,7 +262,7 @@ _Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
     }
 
     if (p == (PyObject *)&_PyNone_Type) {
-        return PyUnicodeWriter_WriteUTF8(writer, "None", 4);
+        return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
     }
 
     if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&

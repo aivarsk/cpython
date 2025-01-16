@@ -194,7 +194,7 @@ union_repr(PyObject *self)
     }
 
     for (Py_ssize_t i = 0; i < len; i++) {
-        if (i > 0 && PyUnicodeWriter_WriteUTF8(writer, " | ", 3) < 0) {
+        if (i > 0 && _PyUnicodeWriter_WriteASCIIString(writer, " | ", 3) < 0) {
             goto error;
         }
         PyObject *p = PyTuple_GET_ITEM(alias->args, i);
