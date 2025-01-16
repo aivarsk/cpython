@@ -558,7 +558,7 @@ list_repr_impl(PyListObject *v)
         goto error;
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, '[') < 0) {
         goto error;
     }
 
@@ -566,10 +566,10 @@ list_repr_impl(PyListObject *v)
        so must refetch the list size on each iteration. */
     for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
             }
-            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
                 goto error;
             }
         }
@@ -579,7 +579,7 @@ list_repr_impl(PyListObject *v)
         }
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, ']') < 0) {
         goto error;
     }
 

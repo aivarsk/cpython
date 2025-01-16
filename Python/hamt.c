@@ -1196,7 +1196,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
             }
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (_PyUnicodeWriter_WriteChar(writer, '\n') < 0) {
             goto error;
         }
     }
@@ -1921,7 +1921,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (_PyUnicodeWriter_WriteChar(writer, '\n') < 0) {
             goto error;
         }
     }

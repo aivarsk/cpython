@@ -58,7 +58,7 @@ ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
 
     Py_ssize_t len = PyList_GET_SIZE(p);
 
-    if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, '[') < 0) {
         return -1;
     }
 
@@ -74,7 +74,7 @@ ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, ']') < 0) {
         return -1;
     }
 
@@ -96,14 +96,14 @@ ga_repr(PyObject *self)
     }
 
     if (alias->starred) {
-        if (PyUnicodeWriter_WriteChar(writer, '*') < 0) {
+        if (_PyUnicodeWriter_WriteChar(writer, '*') < 0) {
             goto error;
         }
     }
     if (_Py_typing_type_repr(writer, alias->origin) < 0) {
         goto error;
     }
-    if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, '[') < 0) {
         goto error;
     }
     for (Py_ssize_t i = 0; i < len; i++) {
@@ -129,7 +129,7 @@ ga_repr(PyObject *self)
             goto error;
         }
     }
-    if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, ']') < 0) {
         goto error;
     }
     return PyUnicodeWriter_Finish(writer);

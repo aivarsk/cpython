@@ -3291,7 +3291,7 @@ dict_repr_lock_held(PyObject *self)
         goto error;
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, '{') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, '{') < 0) {
         goto error;
     }
 
@@ -3306,10 +3306,10 @@ dict_repr_lock_held(PyObject *self)
 
         if (!first) {
             // Write ", "
-            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
             }
-            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
                 goto error;
             }
         }
@@ -3321,10 +3321,10 @@ dict_repr_lock_held(PyObject *self)
         }
 
         // Write ": "
-        if (PyUnicodeWriter_WriteChar(writer, ':') < 0) {
+        if (_PyUnicodeWriter_WriteChar(writer, ':') < 0) {
             goto error;
         }
-        if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+        if (_PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
             goto error;
         }
 
@@ -3337,7 +3337,7 @@ dict_repr_lock_held(PyObject *self)
         Py_CLEAR(value);
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, '}') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, '}') < 0) {
         goto error;
     }
 

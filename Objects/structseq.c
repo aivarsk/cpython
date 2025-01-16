@@ -280,17 +280,17 @@ structseq_repr(PyStructSequence *obj)
     if (PyUnicodeWriter_WriteUTF8(writer, typ->tp_name, type_name_len) < 0) {
         goto error;
     }
-    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, '(') < 0) {
         goto error;
     }
 
     for (Py_ssize_t i=0; i < VISIBLE_SIZE(obj); i++) {
         if (i > 0) {
             // Write ", "
-            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
             }
-            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
                 goto error;
             }
         }
@@ -308,7 +308,7 @@ structseq_repr(PyStructSequence *obj)
         }
 
         // Write "=" + repr(value)
-        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
+        if (_PyUnicodeWriter_WriteChar(writer, '=') < 0) {
             goto error;
         }
         PyObject *value = PyStructSequence_GetItem((PyObject*)obj, i);
@@ -318,7 +318,7 @@ structseq_repr(PyStructSequence *obj)
         }
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, ')') < 0) {
         goto error;
     }
 

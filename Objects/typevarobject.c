@@ -174,7 +174,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
             return NULL;
         }
         if (PyTuple_Check(value)) {
-            if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, '(') < 0) {
                 PyUnicodeWriter_Discard(writer);
                 return NULL;
             }
@@ -191,7 +191,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
                     return NULL;
                 }
             }
-            if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ')') < 0) {
                 PyUnicodeWriter_Discard(writer);
                 return NULL;
             }

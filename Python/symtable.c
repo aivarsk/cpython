@@ -3157,7 +3157,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
         return NULL;
     }
     // ident = "_" + priv[ipriv:] + ident
-    if (PyUnicodeWriter_WriteChar(writer, '_') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, '_') < 0) {
         goto error;
     }
     if (PyUnicodeWriter_WriteSubstring(writer, privateobj, ipriv, plen) < 0) {

@@ -246,17 +246,17 @@ tuple_repr(PyObject *self)
         goto error;
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, '(') < 0) {
         goto error;
     }
 
     /* Do repr() on each element. */
     for (Py_ssize_t i = 0; i < n; ++i) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
             }
-            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+            if (_PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
                 goto error;
             }
         }
@@ -267,11 +267,11 @@ tuple_repr(PyObject *self)
     }
 
     if (n == 1) {
-        if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
+        if (_PyUnicodeWriter_WriteChar(writer, ',') < 0) {
             goto error;
         }
     }
-    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+    if (_PyUnicodeWriter_WriteChar(writer, ')') < 0) {
         goto error;
     }
 

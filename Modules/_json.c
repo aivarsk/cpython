@@ -1656,7 +1656,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, '{')) {
+    if (_PyUnicodeWriter_WriteChar(writer, '{')) {
         goto bail;
     }
 
@@ -1715,7 +1715,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, '}')) {
+    if (_PyUnicodeWriter_WriteChar(writer, '}')) {
         goto bail;
     }
     return 0;
@@ -1760,7 +1760,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, '[')) {
+    if (_PyUnicodeWriter_WriteChar(writer, '[')) {
         goto bail;
     }
 
@@ -1798,7 +1798,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, ']')) {
+    if (_PyUnicodeWriter_WriteChar(writer, ']')) {
         goto bail;
     }
     Py_DECREF(s_fast);

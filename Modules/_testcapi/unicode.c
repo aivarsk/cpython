@@ -304,7 +304,7 @@ writer_write_char(PyObject *self_raw, PyObject *args)
     }
     Py_UCS4 ch = PyUnicode_READ_CHAR(str, 0);
 
-    if (PyUnicodeWriter_WriteChar(self->writer, ch) < 0) {
+    if (_PyUnicodeWriter_WriteChar(self->writer, ch) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
