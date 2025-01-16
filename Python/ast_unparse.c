@@ -707,7 +707,7 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
         APPEND_STR(conversion);
     }
     if (e->v.FormattedValue.format_spec) {
-        if (-1 == _PyUnicodeWriter_WriteASCIIString(writer, ":", 1) ||
+        if (-1 == _PyUnicodeWriter_WriteChar(writer, ':') ||
             -1 == append_fstring_element(writer,
                                          e->v.FormattedValue.format_spec,
                                          true
