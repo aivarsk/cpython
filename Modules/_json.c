@@ -52,6 +52,7 @@ typedef struct _PyEncoderObject {
     char skipkeys;
     int allow_nan;
     PyCFunction fast_encode;
+    PyObject *visited;
 } PyEncoderObject;
 
 #define PyEncoderObject_CAST(op)    ((PyEncoderObject *)(op))
@@ -106,6 +107,51 @@ static PyObject *
 encoder_encode_string(PyEncoderObject *s, PyObject *obj);
 static PyObject *
 encoder_encode_float(PyEncoderObject *s, PyObject *obj);
+
+static int
+_PyEncoderObject_Enter(PyEncoderObject *enc, PyObject *obj)
+{
+    if (enc->markers != Py_None) {
+        Py_ssize_t i, len;
+
+        if (enc->visited == NULL) {
+            enc->visited = PyList_New(0);
+            if (enc->visited == NULL) {
+                return -1;
+            }
+        }
+
+        len = PyList_GET_SIZE(enc->visited);
+        for (i = 0; i < len; i++) {
+            if (PyList_GET_ITEM(enc->visited, i) == obj) {
+                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
+                return -1;
+            }
+        }
+        if (PyList_Append(enc->visited, obj) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static void
+_PyEncoderObject_Leave(PyEncoderObject *enc, PyObject *obj)
+{
+    if (enc->markers != Py_None) {
+        Py_ssize_t i;
+
+        assert(enc->visited != NULL);
+        i = PyList_GET_SIZE(enc->visited);
+        /* Count backwards because we always expect obj to be list[-1] */
+        while (--i >= 0) {
+            if (PyList_GET_ITEM(enc->visited, i) == obj) {
+                PyList_SetSlice(enc->visited, i, i + 1, NULL);
+                break;
+            }
+        }
+    }
+}
 
 #define S_CHAR(c) (c >= ' ' && c <= '~' && c != '\\' && c != '"')
 #define IS_WHITESPACE(c) (((c) == ' ') || ((c) == '\t') || ((c) == '\n') || ((c) == '\r'))
@@ -1253,6 +1299,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->skipkeys = skipkeys;
     s->allow_nan = allow_nan;
     s->fast_encode = NULL;
+    s->visited = NULL;
 
     if (PyCFunction_Check(s->encoder)) {
         PyCFunction f = PyCFunction_GetFunction(s->encoder);
@@ -1260,7 +1307,6 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             s->fast_encode = f;
         }
     }
-
     return (PyObject *)s;
 }
 
@@ -1522,16 +1568,9 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         return rv;
     }
     else {
-        int rc;
 
-        if (s->markers != Py_None) {
-            rc = Py_ReprEnter(obj);
-            if (rc != 0) {
-                if (rc > 0) {
-                    PyErr_SetString(PyExc_ValueError, "Circular reference detected");
-                }
-                goto bail;
-            }
+        if (_PyEncoderObject_Enter(s, obj) != 0) {
+            goto bail;
         }
 
         newobj = PyObject_CallOneArg(s->defaultfn, obj);
@@ -1552,14 +1591,10 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         }
 
-        if (s->markers != Py_None) {
-            Py_ReprLeave(obj);
-        }
+        _PyEncoderObject_Leave(s, obj);
         return rv;
 bail:
-        if (s->markers != Py_None) {
-            Py_ReprLeave(obj);
-        }
+        _PyEncoderObject_Leave(s, obj);
         return -1;
     }
 }
@@ -1645,21 +1680,14 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *items = NULL;
     PyObject *key, *value;
     bool first = true;
-    int rc;
 
     if (PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
         return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
     }
 
-    if (s->markers != Py_None) {
-        rc = Py_ReprEnter(dct);
-        if (rc != 0) {
-            if (rc > 0) {
-                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
-            }
-            goto bail;
-        }
+    if (_PyEncoderObject_Enter(s, dct) != 0) {
+        goto bail;
     }
 
     if (PyUnicodeWriter_WriteChar(writer, '{')) {
@@ -1706,9 +1734,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
 
-    if (s->markers != Py_None) {
-        Py_ReprLeave(dct);
-    }
+    _PyEncoderObject_Leave(s, dct);
     if (s->indent != Py_None && !first) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
@@ -1723,9 +1749,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 
 bail:
     Py_XDECREF(items);
-    if (s->markers != Py_None) {
-        Py_ReprLeave(dct);
-    }
+    _PyEncoderObject_Leave(s, dct);
     return -1;
 }
 
@@ -1736,7 +1760,6 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
 {
     PyObject *s_fast = NULL;
     Py_ssize_t i;
-    int rc;
 
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
     if (s_fast == NULL)
@@ -1746,14 +1769,8 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         return PyUnicodeWriter_WriteASCII(writer, "[]", 2);
     }
 
-    if (s->markers != Py_None) {
-        rc = Py_ReprEnter(seq);
-        if (rc != 0) {
-            if (rc > 0) {
-                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
-            }
-            goto bail;
-        }
+    if (_PyEncoderObject_Enter(s, seq) != 0) {
+        goto bail;
     }
 
     if (PyUnicodeWriter_WriteChar(writer, '[')) {
@@ -1781,9 +1798,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         }
     }
-    if (s->markers != Py_None) {
-        Py_ReprLeave(seq);
-    }
+    _PyEncoderObject_Leave(s, seq);
 
     if (s->indent != Py_None) {
         indent_level--;
@@ -1799,9 +1814,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     return 0;
 
 bail:
-    if (s->markers != Py_None) {
-        Py_ReprLeave(seq);
-    }
+    _PyEncoderObject_Leave(s, seq);
     Py_DECREF(s_fast);
     return -1;
 }
@@ -1842,6 +1855,7 @@ encoder_clear(PyObject *op)
     Py_CLEAR(self->indent);
     Py_CLEAR(self->key_separator);
     Py_CLEAR(self->item_separator);
+    Py_CLEAR(self->visited);
     return 0;
 }
 
