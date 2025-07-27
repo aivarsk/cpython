@@ -10,13 +10,13 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_dict.h"          // _PyDict_SetItem_KnownHash()
 #include "pycore_global_strings.h" // _Py_ID()
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
 
 #include <stdbool.h>              // bool
-
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
@@ -52,7 +52,6 @@ typedef struct _PyEncoderObject {
     char skipkeys;
     int allow_nan;
     PyCFunction fast_encode;
-    PyObject *visited;
 } PyEncoderObject;
 
 #define PyEncoderObject_CAST(op)    ((PyEncoderObject *)(op))
@@ -112,23 +111,18 @@ static int
 _PyEncoderObject_Enter(PyEncoderObject *enc, PyObject *obj)
 {
     if (enc->markers != Py_None) {
-        Py_ssize_t i, len;
+        Py_ssize_t len;
+        Py_hash_t hash;
 
-        if (enc->visited == NULL) {
-            enc->visited = PyList_New(0);
-            if (enc->visited == NULL) {
-                return -1;
-            }
+        hash = Py_HashPointer(obj);
+        len = PyDict_GET_SIZE(enc->markers);
+
+        if (_PyDict_SetItem_KnownHash(enc->markers, obj, obj, hash) == -1) {
+            return -1;
         }
 
-        len = PyList_GET_SIZE(enc->visited);
-        for (i = 0; i < len; i++) {
-            if (PyList_GET_ITEM(enc->visited, i) == obj) {
-                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
-                return -1;
-            }
-        }
-        if (PyList_Append(enc->visited, obj) < 0) {
+        if (PyDict_GET_SIZE(enc->markers) == len) {
+            PyErr_SetString(PyExc_ValueError, "Circular reference detected");
             return -1;
         }
     }
@@ -139,17 +133,10 @@ static void
 _PyEncoderObject_Leave(PyEncoderObject *enc, PyObject *obj)
 {
     if (enc->markers != Py_None) {
-        Py_ssize_t i;
+        Py_hash_t hash;
 
-        assert(enc->visited != NULL);
-        i = PyList_GET_SIZE(enc->visited);
-        /* Count backwards because we always expect obj to be list[-1] */
-        while (--i >= 0) {
-            if (PyList_GET_ITEM(enc->visited, i) == obj) {
-                PyList_SetSlice(enc->visited, i, i + 1, NULL);
-                break;
-            }
-        }
+        hash = Py_HashPointer(obj);
+        _PyDict_DelItem_KnownHash(enc->markers, obj, hash);
     }
 }
 
@@ -1299,7 +1286,6 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->skipkeys = skipkeys;
     s->allow_nan = allow_nan;
     s->fast_encode = NULL;
-    s->visited = NULL;
 
     if (PyCFunction_Check(s->encoder)) {
         PyCFunction f = PyCFunction_GetFunction(s->encoder);
@@ -1570,7 +1556,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
     else {
 
         if (_PyEncoderObject_Enter(s, obj) != 0) {
-            goto bail;
+            return -1;
         }
 
         newobj = PyObject_CallOneArg(s->defaultfn, obj);
@@ -1687,7 +1673,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (_PyEncoderObject_Enter(s, dct) != 0) {
-        goto bail;
+        return -1;
     }
 
     if (PyUnicodeWriter_WriteChar(writer, '{')) {
@@ -1770,7 +1756,8 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (_PyEncoderObject_Enter(s, seq) != 0) {
-        goto bail;
+        Py_DECREF(s_fast);
+        return -1;
     }
 
     if (PyUnicodeWriter_WriteChar(writer, '[')) {
@@ -1855,7 +1842,6 @@ encoder_clear(PyObject *op)
     Py_CLEAR(self->indent);
     Py_CLEAR(self->key_separator);
     Py_CLEAR(self->item_separator);
-    Py_CLEAR(self->visited);
     return 0;
 }
 
