@@ -117,7 +117,7 @@ _PyEncoderObject_Enter(PyEncoderObject *enc, PyObject *obj)
         hash = Py_HashPointer(obj);
         len = PyDict_GET_SIZE(enc->markers);
 
-        if (_PyDict_SetItem_KnownHash(enc->markers, obj, obj, hash) == -1) {
+        if (_PyDict_SetItem_KnownHash(enc->markers, obj, Py_None, hash) == -1) {
             return -1;
         }
 
