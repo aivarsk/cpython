@@ -1570,7 +1570,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
     else {
 
         if (_PyEncoderObject_Enter(s, obj) != 0) {
-            goto bail;
+            return -1;
         }
 
         newobj = PyObject_CallOneArg(s->defaultfn, obj);
@@ -1687,7 +1687,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (_PyEncoderObject_Enter(s, dct) != 0) {
-        goto bail;
+        return -1;
     }
 
     if (PyUnicodeWriter_WriteChar(writer, '{')) {
@@ -1770,7 +1770,8 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (_PyEncoderObject_Enter(s, seq) != 0) {
-        goto bail;
+        Py_DECREF(s_fast);
+        return -1;
     }
 
     if (PyUnicodeWriter_WriteChar(writer, '[')) {
